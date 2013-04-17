@@ -90,8 +90,11 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     }
 
     switch (action) {
+      case "insert":
+        doSave(message, true);
+        break;
       case "save":
-        doSave(message);
+        doSave(message, false);
         break;
       case "update":
         doUpdate(message);
@@ -122,7 +125,7 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     }
   }
 
-  private void doSave(Message<JsonObject> message) {
+  private void doSave(Message<JsonObject> message, boolean insert) {
     String collection = getMandatoryString("collection", message);
     if (collection == null) {
       return;
@@ -144,7 +147,7 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     if (writeConcern == null) {
       writeConcern = db.getWriteConcern();
     }
-    WriteResult res = coll.save(obj, writeConcern);
+    WriteResult res = (insert ? coll.insert(obj, writeConcern) : coll.save(obj, writeConcern));
     if (res.getError() == null) {
       if (genID != null) {
         JsonObject reply = new JsonObject();
