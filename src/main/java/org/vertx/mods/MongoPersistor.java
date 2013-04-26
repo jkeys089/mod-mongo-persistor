@@ -58,11 +58,11 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     super.start();
 
     address = getOptionalStringConfig("address", "vertx.mongopersistor");
-    host = getOptionalStringConfig("host", "localhost");
+    host = getOptionalStringConfig("host", "10.0.1.98");
     port = getOptionalIntConfig("port", 27017);
     dbName = getOptionalStringConfig("db_name", "default_db");
-    username = getOptionalStringConfig("username", null);
-    password = getOptionalStringConfig("password", null);
+    username = getOptionalStringConfig("username", "test");
+    password = getOptionalStringConfig("password", "test123");
 
     try {
       mongo = new Mongo(host, port);
@@ -104,6 +104,9 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
         break;
       case "findone":
         doFindOne(message);
+        break;
+      case "findAndModify":
+        doFindAndModify(message);
         break;
       case "delete":
         doDelete(message);
@@ -233,6 +236,53 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
       cursor.sort(sortObjectToDBObject(sort));
     }
     sendBatch(message, cursor, batchSize);
+  }
+
+  private void doFindAndModify(Message<JsonObject> message) {
+    String collection = getMandatoryString("collection", message);
+    if (collection == null) {
+      return;
+    }
+    JsonObject query = getMandatoryObject("query", message);
+    if (query == null) {
+      return;
+    }
+
+    boolean remove = message.body.getBoolean("remove", false);
+    boolean newDoc = message.body.getBoolean("newDoc", false);
+    boolean upsert = message.body.getBoolean("upsert", false);
+
+    JsonObject updateJson = message.body.getObject("update");
+    if (updateJson == null && !remove) {
+      sendError(message, "When remove is false an update document is required");
+      return;
+    }
+
+    DBObject update = null;
+    if (updateJson != null) {
+      update = jsonToDBObject(updateJson);
+    }
+
+    DBObject fields = null;
+    JsonObject fieldsJson = message.body.getObject("fields");
+    if (fieldsJson != null){
+      fields = jsonToDBObject(fieldsJson);
+    }
+    DBObject sort = null;
+    JsonObject sortJson = message.body.getObject("sort");
+    if (sortJson != null) {
+      sort = jsonToDBObject(sortJson);
+    }
+
+    DBCollection coll = db.getCollection(collection);
+    DBObject res = coll.findAndModify(jsonToDBObject(query), fields, sort, remove, update, newDoc, upsert);
+    JsonObject reply = new JsonObject();
+    if (res != null) {
+      String s = res.toString();
+      JsonObject m = new JsonObject(s);
+      reply.putObject("result", m);
+    }
+    sendOK(message, reply);
   }
 
   private DBObject sortObjectToDBObject(Object sortObj) {

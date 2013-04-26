@@ -236,6 +236,79 @@ Equivalence in mongoDB:
 
 db.order.find().skip(10).limit(10)
 
+### Find and Modify
+
+Finds and modify matching documents in the database.
+
+To findAndModify a document send a JSON message to the module main address:
+
+    {
+        "action": "findAndModify",
+        "collection": <collection>,
+        "query": <query>,
+        "update": <update>,
+        "fields": <fields>,
+        "sort": <sort>,
+        "remove": <remove>,
+        "new": <new>,
+        "upsert": <upsert>,
+    }
+
+Where:
+* `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
+* `query` is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.
+* `update` is a JSON object which contains the fields and values you want to update the existing record to match. Optional when `remove` is true.
+* `fields` is an optional JSON object that contains the fields that should be returned for matched documents. See MongoDB manual for more information. Example: { "name": 1 } will only return objects with _id and the name field
+* `sort` is an optional JSON object that contains the sort field and type which affects the result of the query (only the first matching record will be updated).
+* `remove` is a boolean which instructs the operation to remove the records matched by the query. Default is false.
+* `newDoc` is a boolean which instructs the operation to return the newly updated document after the operation is complete. Default is false.
+* `upsert` is a boolean which instructs the operation to insert a new document if no match is found from the query. Default is false.
+
+An example would be:
+
+    {
+        "action": "findAndModify",
+        "collection": "orders",
+        "query": {
+            "item": "cheese",
+            "shipped": false
+        },
+        "update": {
+            "shipped": true
+        },
+        "newDoc": true
+    }
+
+This would find the first order the `item` field has the value `cheese` AND the `shipped` field has the value `false`. It would then update the `shipped` field to `true` and return the newly updated document.
+
+When the find complete successfully, a reply message is sent back to the sender with the following data:
+
+    {
+        "status": "ok",
+        "result": <result>
+    }
+
+Where `result` is a JSON array containing the result of the findAndModify operation. For example:
+
+    {
+        "status": "ok",
+        "result": {
+            "user": "tim",
+            "item": "cheese",
+            "total": 123.45,
+            "shipped": true
+        }
+    }
+
+If an error occurs during the findAndModify a reply is returned:
+
+    {
+        "status": "error",
+        "message": <message>
+    }
+
+Where `message` is an error message.
+
 ### Count
 
 Count all matching document in the database.

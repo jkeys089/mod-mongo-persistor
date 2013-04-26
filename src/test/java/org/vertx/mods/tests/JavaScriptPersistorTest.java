@@ -48,6 +48,26 @@ public class JavaScriptPersistorTest extends TestBase {
   }
 
   @Test
+  public void testFindAndModify() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindAndModifyWithRemove() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindAndModifyFailed() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testFindAndModifyUpsert() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testFindOne() throws Exception {
     startTest(getMethodName());
   }

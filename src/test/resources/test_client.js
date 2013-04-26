@@ -100,6 +100,204 @@ function testSave() {
   });
 }
 
+function testFindAndModify() {
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'save',
+        document: {
+            name: 'tim',
+            age: 40,
+            pi: 3.14159,
+            male: true,
+            cheeses: ['brie', 'stilton'],
+            visits: 0
+        }
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+    });
+
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'findAndModify',
+        query: {
+            name: 'tim',
+            visits: 0
+        },
+        update: {
+            $inc: {visits: 1}
+        },
+        newDoc: true
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+        var res = reply.result;
+        tu.azzert(res.name === 'tim');
+        tu.azzert(res.age === 40);
+        tu.azzert(res.pi === 3.14159);
+        tu.azzert(res.male === true);
+        tu.azzert(res.cheeses.length === 2);
+        tu.azzert(res.cheeses[0] === 'brie');
+        tu.azzert(res.cheeses[1] === 'stilton');
+        tu.azzert(res.visits === 1);
+        tu.azzert(res._id != undefined);
+        tu.testComplete();
+    });
+}
+
+function testFindAndModifyWithRemove() {
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'save',
+        document: {
+            name: 'tim',
+            age: 40,
+            pi: 3.14159,
+            male: true,
+            cheeses: ['brie', 'stilton'],
+            visits: 0
+        }
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+    });
+
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'findAndModify',
+        query: {
+            name: 'tim',
+            visits: 0
+        },
+        remove: true
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+        var res = reply.result;
+        tu.azzert(res.name === 'tim');
+        tu.azzert(res.age === 40);
+        tu.azzert(res.pi === 3.14159);
+        tu.azzert(res.male === true);
+        tu.azzert(res.cheeses.length === 2);
+        tu.azzert(res.cheeses[0] === 'brie');
+        tu.azzert(res.cheeses[1] === 'stilton');
+        tu.azzert(res.visits === 0);
+        tu.azzert(res._id != undefined);
+        eb.send('test.persistor', {
+            collection: 'testcoll',
+            action: 'find',
+            matcher: {
+                name: 'tim',
+                age: 40,
+                pi: 3.14159,
+                male: true,
+                cheeses: ['brie', 'stilton'],
+                visits: 0
+            }
+        }, function(reply) {
+            tu.azzert(reply.status === 'ok');
+            tu.azzert(reply.results.length === 0);
+
+            tu.testComplete();
+        });
+    });
+}
+
+function testFindAndModifyFailed() {
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'save',
+        document: {
+            name: 'tim',
+            age: 40,
+            pi: 3.14159,
+            male: true,
+            cheeses: ['brie', 'stilton'],
+            visits: 0
+        }
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+    });
+
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'findAndModify',
+        query: {
+            name: 'tim',
+            visits: 9
+        },
+        update: {
+            $inc: {visits: 1}
+        },
+        newDoc: true
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+        tu.azzert(reply.result === undefined);
+        eb.send('test.persistor', {
+            collection: 'testcoll',
+            action: 'find',
+            matcher: {
+                name: 'tim',
+                age: 40,
+                pi: 3.14159,
+                male: true,
+                cheeses: ['brie', 'stilton'],
+                visits: 0
+            }
+        }, function(reply) {
+            tu.azzert(reply.status === 'ok');
+            tu.azzert(reply.results.length === 1);
+
+            tu.testComplete();
+        });
+    });
+}
+
+function testFindAndModifyUpsert() {
+    eb.send('test.persistor', {
+        collection: 'testcoll',
+        action: 'findAndModify',
+        query: {
+            name: 'jon',
+            age: 40,
+            pi: 3.14159,
+            male: true,
+            cheeses: ['brie', 'stilton'],
+            visits: 9
+        },
+        update: {
+            $inc: {visits: 1}
+        },
+        newDoc: true,
+        upsert: true
+    }, function(reply) {
+        tu.azzert(reply.status === 'ok');
+        var res = reply.result;
+        tu.azzert(res.name === 'jon');
+        tu.azzert(res.age === 40);
+        tu.azzert(res.pi === 3.14159);
+        tu.azzert(res.male === true);
+        tu.azzert(res.cheeses.length === 2);
+        tu.azzert(res.cheeses[0] === 'brie');
+        tu.azzert(res.cheeses[1] === 'stilton');
+        tu.azzert(res.visits === 10);
+        tu.azzert(res._id != undefined);
+        eb.send('test.persistor', {
+            collection: 'testcoll',
+            action: 'find',
+            matcher: {
+                name: 'jon',
+                age: 40,
+                pi: 3.14159,
+                male: true,
+                cheeses: ['brie', 'stilton'],
+                visits: 10
+            }
+        }, function(reply) {
+            tu.azzert(reply.status === 'ok');
+            tu.azzert(reply.results.length === 1);
+
+            tu.testComplete();
+        });
+    });
+}
+
 function testFind() {
 
   eb.send('test.persistor', {
@@ -461,7 +659,7 @@ function testCount() {
 }
 
 tu.registerTests(this);
-var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
+var persistorConfig = {address: 'test.persistor', db_name: 'test_db', host: '10.0.1.98', username: 'test', password: 'test123'}
 vertx.deployModule('vertx.mongo-persistor-v' + java.lang.System.getProperty('vertx.version'), persistorConfig, 1, function() {
   deleteAll();
   tu.appReady();
