@@ -659,7 +659,7 @@ function testCount() {
 }
 
 tu.registerTests(this);
-var persistorConfig = {address: 'test.persistor', db_name: 'test_db', host: '10.0.1.98', username: 'test', password: 'test123'}
+var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
 vertx.deployModule('vertx.mongo-persistor-v' + java.lang.System.getProperty('vertx.version'), persistorConfig, 1, function() {
   deleteAll();
   tu.appReady();

@@ -58,11 +58,11 @@ public class MongoPersistor extends BusModBase implements Handler<Message<JsonOb
     super.start();
 
     address = getOptionalStringConfig("address", "vertx.mongopersistor");
-    host = getOptionalStringConfig("host", "10.0.1.98");
+    host = getOptionalStringConfig("host", "localhost");
     port = getOptionalIntConfig("port", 27017);
     dbName = getOptionalStringConfig("db_name", "default_db");
-    username = getOptionalStringConfig("username", "test");
-    password = getOptionalStringConfig("password", "test123");
+    username = getOptionalStringConfig("username", null);
+    password = getOptionalStringConfig("password", null);
 
     try {
       mongo = new Mongo(host, port);
